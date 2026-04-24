@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import pool from './db.ts';
 import authRouter from './routes/auth.ts';
+import projectRouter from './routes/project.ts';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +27,8 @@ app.get('/health', async (req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+
+app.use('/projects', projectRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
