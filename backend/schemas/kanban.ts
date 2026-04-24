@@ -38,7 +38,7 @@ export const UpdateColumnSchema = CreateColumnSchema.partial();
  */
 export const CreateTaskSchema = z.object({
   title: z.string().min(1, "Title is required").max(50),
-  content: z.string().max(300).nullable().optional(),
+  description: z.string().max(300).nullable().optional(),
   columnId: z.uuid(),
 });
 
