@@ -7,6 +7,7 @@ import projectRouter from './routes/project.ts';
 import boardRouter from './routes/board.ts';
 import type { Request, Response, NextFunction } from 'express';
 import columnRouter from './routes/column.ts';
+import taskRouter from './routes/task.ts';
 
 
 const app = express();
@@ -37,6 +38,8 @@ app.use('/api/projects', projectRouter);
 app.use('/api/boards', boardRouter);
 
 app.use('/api/columns', columnRouter);
+
+app.use('/api/tasks', taskRouter);
 
 // Catch and format all application errors.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
