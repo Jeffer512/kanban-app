@@ -43,3 +43,8 @@ export const CreateTaskSchema = z.object({
 });
 
 export const UpdateTaskSchema = CreateTaskSchema.partial();
+
+export const MoveTaskSchema = z.object({
+  newColumnId: z.uuid(),
+  newOrderIndex: z.number().int().min(0),
+});

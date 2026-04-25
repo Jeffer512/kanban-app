@@ -1,6 +1,6 @@
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import pool from '../db.ts';
-import { CreateTaskSchema, UpdateTaskSchema, IdSchema } from '../schemas/kanban.ts';
+import { CreateTaskSchema, UpdateTaskSchema, MoveTaskSchema, IdSchema } from '../schemas/kanban.ts';
 import { z } from 'zod';
 
 /**
@@ -115,4 +115,90 @@ export async function deleteTask(req: Request, res: Response) {
   }
 
   res.json({ message: "Task deleted", id: taskId });
+}
+
+/**
+ * Move a task within a column or to a different column.
+ * Re-indexes affected tasks to maintain consistent ordering.
+ */
+export async function moveTask(req: Request, res: Response, next: NextFunction) {
+  const idResult = IdSchema.safeParse(req.params.id);
+  const bodyResult = MoveTaskSchema.safeParse(req.body);
+
+  if (!idResult.success || !bodyResult.success) {
+    return res.status(400).json({ error: "Invalid ID or move data" });
+  }
+
+  const taskId = idResult.data;
+  const { newColumnId, newOrderIndex } = bodyResult.data;
+  const userId = req.user?.userId;
+
+  const client = await pool.connect();;
+  try {
+    await client.query('BEGIN');
+
+    // Get current task state and verify project membership
+    const taskQuery = `
+      SELECT t.column_id, t.order_index, t.project_id 
+      FROM tasks t
+      JOIN project_members pm ON t.project_id = pm.project_id
+      WHERE t.id = $1 AND pm.user_id = $2
+      FOR UPDATE OF t -- Lock the row to prevent concurrent move conflicts
+    `;
+    const taskRes = await client.query(taskQuery, [taskId, userId]);
+
+    if (taskRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: "Task not found or access denied" });
+    }
+
+    const { column_id: oldColumnId, order_index: oldOrderIndex } = taskRes.rows[0];
+
+    if (oldColumnId === newColumnId) {
+      // Moving within the same column
+      if (oldOrderIndex !== newOrderIndex) {
+        const moveForward = oldOrderIndex < newOrderIndex;
+        const shiftQuery = `
+          UPDATE tasks 
+          SET order_index = CASE 
+            WHEN id = $1 THEN $2
+            WHEN $3 = true AND order_index > $4 AND order_index <= $2 THEN order_index - 1
+            WHEN $3 = false AND order_index < $4 AND order_index >= $2 THEN order_index + 1
+            ELSE order_index
+          END
+          WHERE column_id = $5
+        `;
+        await client.query(shiftQuery, [taskId, newOrderIndex, moveForward, oldOrderIndex, oldColumnId]);
+      }
+    } else {
+      // Moving to a different column
+      
+      // Shift tasks in the old column up to fill the gap
+      await client.query(
+        'UPDATE tasks SET order_index = order_index - 1 WHERE column_id = $1 AND order_index > $2',
+        [oldColumnId, oldOrderIndex]
+      );
+
+      // Shift tasks in the new column down to make space
+      await client.query(
+        'UPDATE tasks SET order_index = order_index + 1 WHERE column_id = $1 AND order_index >= $2',
+        [newColumnId, newOrderIndex]
+      );
+
+      // Update the target task
+      await client.query(
+        'UPDATE tasks SET column_id = $1, order_index = $2 WHERE id = $3',
+        [newColumnId, newOrderIndex, taskId]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({ message: "Task moved successfully" });
+
+  } catch (error) {
+    if (client) await client.query('ROLLBACK');
+    next(error);
+  } finally {
+    if (client) client.release();
+  }
 }
