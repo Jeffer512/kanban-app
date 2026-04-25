@@ -152,7 +152,7 @@ export async function moveTask(req: Request, res: Response, next: NextFunction) 
       return res.status(404).json({ error: "Task not found or access denied" });
     }
 
-    const { column_id: oldColumnId, order_index: oldOrderIndex } = taskRes.rows[0];
+    const { column_id: oldColumnId, order_index: oldOrderIndex, project_id: projectId } = taskRes.rows[0];
 
     if (oldColumnId === newColumnId) {
       // Moving within the same column
@@ -172,7 +172,18 @@ export async function moveTask(req: Request, res: Response, next: NextFunction) 
       }
     } else {
       // Moving to a different column
-      
+
+      // Verify the NEW COLUMN belongs to the same project
+      const columnCheck = await client.query(
+        'SELECT id FROM columns WHERE id = $1 AND project_id = $2',
+        [newColumnId, projectId]
+      );
+
+      if (columnCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: "Invalid target column" });
+      }
+
       // Shift tasks in the old column up to fill the gap
       await client.query(
         'UPDATE tasks SET order_index = order_index - 1 WHERE column_id = $1 AND order_index > $2',
