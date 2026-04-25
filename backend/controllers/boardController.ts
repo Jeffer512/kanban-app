@@ -65,7 +65,7 @@ export async function createBoard(req: Request, res: Response, next: NextFunctio
  * Get all boards for a specific project.
  */
 export async function getBoards(req: Request, res: Response) {
-  const idResult = IdSchema.safeParse(req.params.id);
+  const idResult = IdSchema.safeParse(req.params.projectId);
   if (!idResult.success) return res.status(400).json({ error: "Invalid Project ID format" });
 
   const projectId = idResult.data;
@@ -196,7 +196,7 @@ export async function getFullBoard(req: Request, res: Response) {
   const result = await pool.query(query, [boardId, userId]);
 
   if (result.rows.length === 0) {
-    return res.status(404).json({ error: "Board not found or access denied ASAADFASSWG" });
+    return res.status(404).json({ error: "Board not found or access denied" });
   }
 
   res.json(result.rows[0]);

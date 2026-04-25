@@ -11,7 +11,7 @@ projectRouter.get('/', getProjects);
 projectRouter.post('/', createProject);
 projectRouter.patch('/:id', updateProject);
 projectRouter.delete('/:id', deleteProject);
-projectRouter.get('/:id/boards', getBoards);
-projectRouter.post('/:id/boards', createBoard);
+projectRouter.get('/:projectId/boards', getBoards);
+projectRouter.post('/:projectId/boards', createBoard);
 
 export default projectRouter;
