@@ -6,6 +6,7 @@ import authRouter from './routes/auth.ts';
 import projectRouter from './routes/project.ts';
 import boardRouter from './routes/board.ts';
 import type { Request, Response, NextFunction } from 'express';
+import columnRouter from './routes/column.ts';
 
 
 const app = express();
@@ -34,6 +35,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/projects', projectRouter);
 
 app.use('/api/boards', boardRouter);
+
+app.use('/api/columns', columnRouter);
 
 // Catch and format all application errors.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
