@@ -31,9 +31,9 @@ app.get('/health', async (req, res) => {
 
 app.use('/api/auth', authRouter);
 
-app.use('/projects', projectRouter);
+app.use('/api/projects', projectRouter);
 
-app.use('/boards', boardRouter);
+app.use('/api/boards', boardRouter);
 
 // Catch and format all application errors.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
