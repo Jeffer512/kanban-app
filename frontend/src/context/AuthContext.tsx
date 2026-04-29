@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import type { ReactNode } from 'react'; 
-import api from '../api/axios.ts';
+import api from '../api/axios';
 /* eslint-disable react-refresh/only-export-components */
 
 interface User {

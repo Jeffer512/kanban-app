@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  /* This defines the 'utility' names. 
+     Tailwind 4 will now generate classes like 'bg-app-bg' */
+  --color-app-bg: var(--app-bg);
+  --color-card-bg: var(--card-bg);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border-color);
+}
+
+/* Define the actual CSS variables and their defaults (Light Mode) */
+:root {
+  --app-bg: #ffffff;
+  --card-bg: #f4f4f5;
+  --text-main: #09090b;
+  --text-muted: #71717a;
+  --border-color: #e4e4e7;
+}
+
+/* Use a Media Query to override variables based on browser settings */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-bg: #09090b;   /* Zinc 950 */
+    --card-bg: #18181b;  /* Zinc 900 */
+    --text-main: #fafafa; /* Zinc 50 */
+    --text-muted: #a1a1aa; /* Zinc 400 */
+    --border-color: #27272a; /* Zinc 800 */
+  }
+}
+
+/* Also support a manual .dark class if you add a toggle later */
+.dark {
+  --app-bg: #09090b;
+  --card-bg: #18181b;
+  --text-main: #fafafa;
+  --text-muted: #a1a1aa;
+  --border-color: #27272a;
+}
+
+@layer base {
+  body {
+    /* Apply the variables to the root body so the whole page matches */
+    background-color: var(--app-bg);
+    color: var(--text-main);
+    /* Smoothly animate the transition between modes */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
