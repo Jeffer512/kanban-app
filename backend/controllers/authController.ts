@@ -65,3 +65,22 @@ export async function login(req: Request, res: Response) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
+
+export async function logout(req: Request, res: Response) {
+  // Overwrite the cookie with an expired date
+  res.cookie('token', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    expires: new Date(0) 
+  });
+  
+  res.json({ message: "Logged out successfully" });
+}
+
+export async function getMe(req: Request, res: Response) {
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  res.json({ user: req.user });
+}
