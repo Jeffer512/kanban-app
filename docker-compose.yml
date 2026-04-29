@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql 
       - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   backend:
@@ -22,6 +22,7 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - PORT=${SERVER_PORT}
+      - JWT_SECRET=${JWT_SECRET}
     develop:
       watch:
         - action: sync
@@ -33,6 +34,25 @@ services:
           path: ./backend/package.json
     depends_on:
       - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: kanban-frontend
+    ports:
+      - "5173:5173"
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./frontend/package.json
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
