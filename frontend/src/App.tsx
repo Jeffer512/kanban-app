@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import ProjectsPage from './pages/ProjectsPage'
+import BoardsPage from './pages/BoardsPage'
 
 function App() {
   return (
@@ -15,6 +16,14 @@ function App() {
       element={
         <ProtectedRoute>
           <ProjectsPage />
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/projects/:projectId" 
+      element={
+        <ProtectedRoute>
+          <BoardsPage />
         </ProtectedRoute>
       } 
     />

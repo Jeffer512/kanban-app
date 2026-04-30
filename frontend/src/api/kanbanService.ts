@@ -32,6 +32,15 @@ export const createBoard = async (projectId: string, name: string) => {
   return response.data;
 };
   
+export const updateBoard = async (id: string, name: string) => {
+  const response = await api.patch<Board>(`/boards/${id}`, { name });
+  return response.data;
+};
+
+export const deleteBoard = async (id: string) => {
+  await api.delete(`/boards/${id}`);
+};
+  
 export const getFullBoard = async (boardId: string) => {
   const response = await api.get<Board & { columns: Column[] }>(`/boards/${boardId}/layout`);
   return response.data;
