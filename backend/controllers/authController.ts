@@ -50,7 +50,7 @@ export async function login(req: Request, res: Response) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 
+      maxAge: 24 * 60 * 60 * 1000
     });
 
     res.json({ message: "Logged in", user: { id: user.id, username: user.username } });
