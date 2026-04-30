@@ -3,7 +3,7 @@ interface BaseEntity {
   created_at: string;
 }
 
-export interface Project extends Omit<BaseEntity, 'project_id'> {
+export interface Project extends BaseEntity {
   name: string;
   role: string;
 }

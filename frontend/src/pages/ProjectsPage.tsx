@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { getProjects, createProject, updateProject, deleteProject } from '../api/kanbanService';
+import { CreateProjectSchema } from '../schemas/kanban';
 import type { Project } from '../types/kanban';
 import { useAuth } from '../context/AuthContext';
+import { z } from 'zod';
 
 const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -33,6 +35,12 @@ const ProjectsPage = () => {
     fetchProjects();
   }, []);
 
+  // Real-time validation
+  const validation = CreateProjectSchema.safeParse({ name: projectName });
+  const nameError = !validation.success && projectName.length > 0 
+    ? z.treeifyError(validation.error).properties?.name?.errors
+    : null;
+
   const handleOpenCreateModal = () => {
     setProjectToEdit(null);
     setProjectName('');
@@ -50,6 +58,7 @@ const ProjectsPage = () => {
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
+    if (!validation.success) return;
 
     const backup = [...projects];
     setIsModalOpen(false);
@@ -91,7 +100,7 @@ const ProjectsPage = () => {
     if (!window.confirm('Are you sure you want to delete this project?')) return;
 
     const backup = [...projects];
-    // OPTIMISTIC DELETE
+    // Optimistic delete
     setProjects(prev => prev.filter(p => p.id !== id));
     setActiveMenuId(null);
 
@@ -206,10 +215,12 @@ const ProjectsPage = () => {
                 <input
                   autoFocus
                   type="text"
-                  className={`w-full p-3 rounded-xl bg-app-bg border border-border outline-none focus:ring-2 focus:ring-zinc-500/20 transition-all`}
+                  className={`w-full p-3 rounded-xl bg-app-bg border ${nameError ? 'border-red-500' : 'border-border'} outline-none focus:ring-2 focus:ring-zinc-500/20 transition-all`}
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                />              </div>
+                />
+                {nameError && <p className="text-red-500 text-xs mt-2">{nameError}</p>}
+              </div>
               
               <div className="flex gap-3 pt-2">
                 <button 
@@ -221,7 +232,7 @@ const ProjectsPage = () => {
                 </button>
                 <button 
                   type="submit"
-                  disabled={projectName.length < 1}
+                  disabled={!validation.success}
                   className="flex-1 bg-text-main text-app-bg px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-30 transition-all cursor-pointer"
                 >
                   {projectToEdit ? 'Update' : 'Create'}
