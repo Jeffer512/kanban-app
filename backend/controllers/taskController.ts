@@ -71,7 +71,7 @@ export async function updateTask(req: Request, res: Response) {
 
   const fields = Object.keys(updates);
   const values = Object.values(updates);
-  const setClause = fields.map((f, i) => `t.${f} = $${i + 1}`).join(', ');
+  const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
 
   // Update via join to verify project membership
   const query = `

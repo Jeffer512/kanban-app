@@ -71,7 +71,7 @@ export async function updateColumn(req: Request, res: Response) {
 
   const fields = Object.keys(updates);
   const values = Object.values(updates);
-  const setClause = fields.map((f, i) => `c.${f} = $${i + 1}`).join(', ');
+  const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
 
   const query = `
     UPDATE columns c

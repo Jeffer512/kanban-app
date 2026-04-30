@@ -46,7 +46,7 @@ export async function createBoard(req: Request, res: Response, next: NextFunctio
     const columnValues = [
       'To Do', boardId, projectId, 0,
       'Doing', boardId, projectId, 1,
-      'Done',  boardId, projectId, 2
+      'Done', boardId, projectId, 2
     ];
 
     await client.query(columnQuery, columnValues);
@@ -104,7 +104,7 @@ export async function updateBoard(req: Request, res: Response) {
 
   const fields = Object.keys(updates);
   const values = Object.values(updates);
-  const setClause = fields.map((f, i) => `b.${f} = $${i + 1}`).join(', ');
+  const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
 
   // Update via join to verify project membership
   const query = `
