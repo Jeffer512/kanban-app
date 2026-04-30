@@ -166,7 +166,8 @@ export async function getFullBoard(req: Request, res: Response) {
     SELECT
       b.id,
       b.name,
-      b.project_id,
+      b.project_id, 
+      b.created_at,
       (
         SELECT json_agg(col_data)
         FROM (
@@ -174,10 +175,11 @@ export async function getFullBoard(req: Request, res: Response) {
             c.id, 
             c.title, 
             c.order_index,
+            c.created_at,
             (
               SELECT COALESCE(json_agg(t_data), '[]'::json)
               FROM (
-                SELECT t.id, t.title, t.description, t.order_index
+                SELECT t.id, t.title, t.description, t.order_index, t.created_at
                 FROM tasks t
                 WHERE t.column_id = c.id
                 ORDER BY t.order_index ASC

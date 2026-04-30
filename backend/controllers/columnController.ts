@@ -41,7 +41,9 @@ export async function createColumn(req: Request, res: Response) {
   const orderIndex = parseInt(countResult.rows[0].count);
 
   const result = await pool.query(
-    'INSERT INTO columns (title, board_id, project_id, order_index) VALUES ($1, $2, $3, $4) RETURNING *',
+    `INSERT INTO columns (title, board_id, project_id, order_index) 
+     VALUES ($1, $2, $3, $4) 
+     RETURNING id, title, order_index, created_at`,
     [title, boardId, projectId, orderIndex]
   );
 
@@ -78,7 +80,7 @@ export async function updateColumn(req: Request, res: Response) {
     WHERE c.id = $${fields.length + 1} 
     AND c.project_id = pm.project_id 
     AND pm.user_id = $${fields.length + 2}
-    RETURNING c.*
+    RETURNING c.id, c.title, c.order_index, c.created_at
   `;
 
   const result = await pool.query(query, [...values, columnId, userId]);

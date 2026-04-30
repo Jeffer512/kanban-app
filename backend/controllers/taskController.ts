@@ -42,7 +42,8 @@ export async function createTask(req: Request, res: Response) {
 
   const result = await pool.query(
     `INSERT INTO tasks (title, description, column_id, project_id, order_index) 
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+     VALUES ($1, $2, $3, $4, $5) 
+     RETURNING id, title, description, order_index, created_at`,
     [title, description, columnId, projectId, orderIndex]
   );
 
@@ -80,7 +81,7 @@ export async function updateTask(req: Request, res: Response) {
     WHERE t.id = $${fields.length + 1} 
     AND t.project_id = pm.project_id 
     AND pm.user_id = $${fields.length + 2}
-    RETURNING t.*
+    RETURNING t.id, t.title, t.description, t.order_index, t.created_at
   `;
 
   const result = await pool.query(query, [...values, taskId, userId]);
