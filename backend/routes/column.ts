@@ -9,6 +9,6 @@ columnRouter.use(authenticateToken);
 
 columnRouter.patch('/:id', updateColumn);
 columnRouter.delete('/:id', deleteColumn);
-columnRouter.post('/:boardId/tasks', createTask);
+columnRouter.post('/:columnId/tasks', createTask);
 
 export default columnRouter;
