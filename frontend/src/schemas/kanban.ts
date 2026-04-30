@@ -9,7 +9,7 @@ export const IdSchema = z.uuid();
  * Project Schemas
  */
 export const CreateProjectSchema = z.object({
-  name: z.string().min(1, "Name is required").max(5),
+  name: z.string().min(1, "Name is required").max(50),
 });
 
 // Make all fields optional for PATCH requests
