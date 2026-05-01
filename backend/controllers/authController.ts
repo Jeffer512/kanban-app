@@ -48,8 +48,8 @@ export async function login(req: Request, res: Response) {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: 24 * 60 * 60 * 1000
     });
 
@@ -60,8 +60,8 @@ export async function logout(req: Request, res: Response) {
   // Overwrite the cookie with an expired date
   res.cookie('token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     expires: new Date(0) 
   });
   

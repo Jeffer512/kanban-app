@@ -3,7 +3,7 @@ import type { Task } from "../types/kanban";
 import { Draggable } from '@hello-pangea/dnd';
 
 interface Props {
-  task: Task; // Removed optional/null since the parent maps over valid tasks
+  task: Task; 
   index: number;
   onEdit: () => void;
   onDelete: (id: string) => void;
@@ -18,7 +18,7 @@ export const TaskCard = ({ task, index, onEdit, onDelete }: Props) => {
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps} // This makes the WHOLE card the handle
+          {...provided.dragHandleProps} // Make the whole card the handle
           className={`group relative p-4 mb-3 bg-app-bg border border-border rounded-xl shadow-sm transition-all ${
             snapshot.isDragging ? 'shadow-2xl ring-2 ring-zinc-500/50 rotate-2' : ''
           }`}

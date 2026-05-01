@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:18-alpine
-    container_name: kanban-db
+    container_name: kanban-db-dev
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -10,13 +10,13 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql 
-      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/database:/docker-entrypoint-initdb.d
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: kanban-backend
+    container_name: kanban-backend-dev
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     environment:
@@ -39,7 +39,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: kanban-frontend
+    container_name: kanban-frontend-dev
     ports:
       - "5173:5173"
     develop:
