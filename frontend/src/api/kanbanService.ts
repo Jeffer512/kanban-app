@@ -1,5 +1,5 @@
 import api from './axios';
-import type { Project, Board, Column, Task } from '../types/kanban';
+import type { FullBoard, Project, Board, Column, Task } from '../types/kanban';
 
 // --- PROJECTS ---
 export const getProjects = async () => {
@@ -42,7 +42,7 @@ export const deleteBoard = async (id: string) => {
 };
   
 export const getFullBoard = async (boardId: string) => {
-  const response = await api.get<Board & { columns: Column[] }>(`/boards/${boardId}/layout`);
+  const response = await api.get<FullBoard>(`/boards/${boardId}`);
   return response.data;
 };
 

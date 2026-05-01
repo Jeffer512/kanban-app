@@ -20,7 +20,7 @@ const ProjectsPage = () => {
   const { user, logout } = useAuth();
 
   // Load projects on mount
-    useEffect(() => {
+  useEffect(() => {
     const fetchProjects = async () => {
       try {
         const data = await getProjects();

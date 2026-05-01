@@ -59,8 +59,6 @@ const BoardsPage = () => {
 
     const backup = [...boards];
     setIsModalOpen(false);
-    console.log("boardId", boardToEdit?.id)
-    console.log("name", boardName)
     if (boardToEdit) {
       // Optimistic update
       setBoards(prev => prev.map(b => b.id === boardToEdit.id ? { ...b, name: boardName } : b));
@@ -99,6 +97,7 @@ const BoardsPage = () => {
     if (!window.confirm('Are you sure you want to delete this board? All columns and tasks will be lost.')) return;
 
     const backup = [...boards];
+    // Optimistic delete
     setBoards(prev => prev.filter(b => b.id !== id));
     setActiveMenuId(null);
 
@@ -200,8 +199,11 @@ const BoardsPage = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-card-bg border border-border p-8 rounded-2xl w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold mb-6">{boardToEdit ? 'Rename Board' : 'New Board'}</h3>
-            
+            <div className="flex justify-between items-center mb-6">
+
+              <h3 className="text-xl font-bold">{boardToEdit ? 'Rename Board' : 'New Board'}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-text-muted hover:text-text-main cursor-pointer">✕</button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-2">Board Name</label>

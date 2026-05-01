@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import ProjectsPage from './pages/ProjectsPage'
 import BoardsPage from './pages/BoardsPage'
+import KanbanBoard from './pages/KanbanBoard'
 
 function App() {
   return (
@@ -24,6 +25,14 @@ function App() {
       element={
         <ProtectedRoute>
           <BoardsPage />
+        </ProtectedRoute>
+      } 
+    />
+    <Route 
+      path="/boards/:boardId" 
+      element={
+        <ProtectedRoute>
+          <KanbanBoard />
         </ProtectedRoute>
       } 
     />
