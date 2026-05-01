@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
-import { getFullBoard, createTask, updateTask, deleteTask,createColumn, updateColumn, deleteColumn } from '../api/kanbanService';
+import { getFullBoard, createTask, updateTask, deleteTask,createColumn, updateColumn, deleteColumn, moveTask } from '../api/kanbanService';
 import type { FullBoard, Task, ColumnWithTasks } from '../types/kanban';
 import { Column } from '../components/Column';
 import { TaskModal } from '../components/TaskModal';
 import { ColumnModal } from '../components/ColumnModal';
+import { DragDropContext } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
 
 const KanbanBoard = () => {
   const { boardId } = useParams<{ boardId: string }>();
@@ -83,7 +85,7 @@ const KanbanBoard = () => {
   const handleTaskDelete = async (taskId: string) => {
     if (!board) return;
     const backup = structuredClone(board);
-    
+
     // Optimistic delete
     setBoard({
       ...board,
@@ -155,6 +157,33 @@ const KanbanBoard = () => {
     }
   };
 
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    const backup = structuredClone(board);
+    const newBoard = structuredClone(board!);
+
+    const sourceCol = newBoard.columns.find(c => c.id === source.droppableId);
+    const destCol = newBoard.columns.find(c => c.id === destination.droppableId);
+
+    if (!sourceCol || !destCol) return;
+
+    const [movedTask] = sourceCol.tasks.splice(source.index, 1);
+    destCol.tasks.splice(destination.index, 0, movedTask);
+
+    setBoard(newBoard);
+
+    try {
+      await moveTask(draggableId, destination.droppableId, destination.index);
+    } catch {
+      setBoard(backup);
+      alert("Failed to sync move with server");
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-app-bg" />;
 
   return (
@@ -183,33 +212,35 @@ const KanbanBoard = () => {
       </header>
 
       {/* KANBAN GRID */}
-      <main className="flex-1 flex flex-wrap gap-6 p-6 justify-center items-start">    
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex justify-between">
-            {error}
-            <button onClick={() => setError(null)}>✕</button>
-          </div>
-        )} 
-        {board?.columns.map(column => (
-          <Column 
-            key={column.id} 
-            column={column} 
-            onEdit={(column) => setColumnModal({ isOpen: true, column })}
-            onDelete={handleColumnDelete}
-            onAddTask={() => setTaskModal({ isOpen: true, columnId: column.id })}
-            onEditTask={(task) => setTaskModal({ isOpen: true, task })}
-            onDeleteTask={handleTaskDelete}
-          />
-        ))}
-        
-        {/* Empty state prompt when no columns exist */}
-        {board?.columns.length === 0 && (
-          <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-border rounded-2xl text-text-muted">
-            <p className="font-bold">This board has no columns.</p>
-            <p className="text-sm mt-1">Click "Add Column" to get started.</p>
-          </div>
-        )}
-      </main>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <main className="flex-1 flex flex-wrap gap-6 p-6 justify-center items-start">    
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex justify-between">
+              {error}
+              <button onClick={() => setError(null)}>✕</button>
+            </div>
+          )} 
+          {board?.columns.map(column => (
+            <Column 
+              key={column.id} 
+              column={column} 
+              onEdit={(column) => setColumnModal({ isOpen: true, column })}
+              onDelete={handleColumnDelete}
+              onAddTask={() => setTaskModal({ isOpen: true, columnId: column.id })}
+              onEditTask={(task) => setTaskModal({ isOpen: true, task })}
+              onDeleteTask={handleTaskDelete}
+            />
+          ))}
+          
+          {/* Empty state prompt when no columns exist */}
+          {board?.columns.length === 0 && (
+            <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-border rounded-2xl text-text-muted">
+              <p className="font-bold">This board has no columns.</p>
+              <p className="text-sm mt-1">Click "Add Column" to get started.</p>
+            </div>
+          )}
+        </main>
+      </DragDropContext>
 
       {/* MODALS */}
       {taskModal.isOpen && (

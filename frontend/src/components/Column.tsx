@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ColumnWithTasks, Task } from "../types/kanban";
 import { TaskCard } from "./Task";
+import { Droppable } from '@hello-pangea/dnd';
 
 interface Props {
   column?: ColumnWithTasks | null;
@@ -30,12 +31,26 @@ export const Column = ({ column, onEdit, onDelete, onAddTask, onEditTask, onDele
           </div>
         </>
       )}
-      
-      <div className="flex-1 overflow-y-auto p-3">
-        {column.tasks.map(task => (
-          <TaskCard key={task.id} task={task} onEdit={() => onEditTask(task)} onDelete={onDeleteTask} />
-        ))}
-      </div>
+      {/* Define the droppable area */}
+      <Droppable droppableId={column.id}>
+        {(provided, snapshot) => (
+          <div
+            {...provided.droppableProps}
+            ref={provided.innerRef}
+            className={`flex-1 p-3 min-h-[100px] transition-colors ${
+              snapshot.isDraggingOver ? 'bg-zinc-500/5' : ''
+            }`}
+          >
+
+            {column.tasks.map((task, index) => (
+              <TaskCard key={task.id} task={task} index={index} onEdit={() => onEditTask(task)} onDelete={onDeleteTask} />
+            ))}
+
+            {/* Prevent the column from shrinking while dragging */}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
 
       <button onClick={onAddTask} className="p-4 text-sm text-text-muted hover:text-text-main cursor-pointer">
         + Add Task
