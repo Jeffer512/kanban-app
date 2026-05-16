@@ -47,3 +47,12 @@ export const MoveTaskSchema = z.object({
   newColumnId: z.uuid(),
   newOrderIndex: z.number().int().min(0),
 });
+
+export const AddUsersSchema = z.object({
+  newUsers: z.array(
+    z.tuple([
+      z.string().min(1).max(50), 
+      z.enum(['owner', 'admin', 'member', 'viewer'])
+    ])
+  ).min(1, "At least one user must be provided")
+});
