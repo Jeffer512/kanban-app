@@ -31,3 +31,17 @@ export interface ColumnWithTasks extends Column {
 export interface FullBoard extends Board {
   columns: ColumnWithTasks[];
 }
+
+export type ProjectRole = 'admin' | 'member' | 'viewer';
+
+export interface ProjectMember {
+  user_id: string;
+  username: string;
+  role: ProjectRole;
+}
+
+export type Invitation = {
+  project_id: string;
+  project_name: string;
+  inviter: string;
+}

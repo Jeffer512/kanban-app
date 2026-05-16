@@ -1,5 +1,5 @@
 import api from './axios';
-import type { FullBoard, Project, Board, Column, Task } from '../types/kanban';
+import type { FullBoard, Project, Board, Column, Task, Invitation } from '../types/kanban';
 
 // --- PROJECTS ---
 export const getProjects = async () => {
@@ -19,6 +19,25 @@ export const updateProject = async (id: string, name: string) => {
 
 export const deleteProject = async (id: string) => {
   await api.delete(`/projects/${id}`);
+};
+
+export const addProjectMembers = async (projectId: string, members: { username: string; role: string }[] ) => {
+  // Transform [{username, role}] -> [["username", "role"]]
+  const payload = {
+    newUsers: members.map(m => [m.username, m.role])
+  };
+
+  const response = await api.post(`/projects/${projectId}/members`, payload);
+  return response.data;
+};
+
+export const getInvitations = async () => {
+  const response = await api.get<Invitation[]>('/projects/invitations');
+  return response.data;
+};
+
+export const respondToInvitation = async (projectId: string, status: 'accepted' | 'rejected') => {
+  await api.patch(`/projects/${projectId}/invitations`, { status });
 };
 
 // --- BOARDS ---
