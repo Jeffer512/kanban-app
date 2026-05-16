@@ -72,7 +72,7 @@ const RegisterPage = () => {
             type="submit"
             className="w-full rounded-lg bg-text-main py-3 text-sm font-bold text-app-bg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-lg"
           >
-            Sign In
+            Register
           </button>
         </form>
         
