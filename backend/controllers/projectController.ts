@@ -167,7 +167,7 @@ export async function inviteUsersToProject(req: Request, res: Response) {
 
   newUsers.forEach(([username, role]) => {
     const foundId = userMap.get(username);
-    if (foundId) {
+    if (foundId && foundId !== userId) {
       insertValues.push(projectId, foundId, role);
       // Generates ($1, $2, $3), ($4, $5, $6), etc.
       valuePlaceholders.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2})`);
@@ -175,10 +175,15 @@ export async function inviteUsersToProject(req: Request, res: Response) {
     }
   });
 
+  if (insertValues.length === 0) {
+    return res.status(404).json({ error: "Can't invite yourself" });
+  }
+
   const query = `
     INSERT INTO project_members (project_id, user_id, role)
     VALUES ${valuePlaceholders.join(', ')}
-    ON CONFLICT (project_id, user_id) DO UPDATE SET role = EXCLUDED.role
+    ON CONFLICT (project_id, user_id) 
+    DO UPDATE SET role = EXCLUDED.role
     RETURNING *
   `;
 
