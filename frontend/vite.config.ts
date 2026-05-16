@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://kanban-backend:3000', 
+        target: 'http://kanban-backend-dev:3000', 
         changeOrigin: true,
       }
     }
