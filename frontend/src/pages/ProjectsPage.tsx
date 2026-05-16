@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { getProjects, createProject, updateProject, deleteProject } from '../api/kanbanService';
+import { getProjects, createProject, updateProject, deleteProject, getInvitations, respondToInvitation } from '../api/kanbanService';
 import { CreateProjectSchema } from '../schemas/kanban';
-import type { Project } from '../types/kanban';
+import type { Invitation, Project } from '../types/kanban';
 import { useAuth } from '../context/AuthContext';
 import { z } from 'zod';
+import { InviteMembersModal } from '../components/InviteMembersModal';
 
 const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // UI State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddUsersModalOpen, setIsAddUsersModalOpen] = useState(false);
   const [projectToEdit, setProjectToEdit] = useState<Project | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [projectName, setProjectName] = useState('');
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const { user, logout } = useAuth();
 
@@ -33,6 +37,19 @@ const ProjectsPage = () => {
     };
 
     fetchProjects();
+  }, []);
+
+  useEffect(() => {
+    const fetchInvitations = async () => {
+      try {
+        const data = await getInvitations();
+        setInvitations(data);
+      } catch {
+        setError('Could not load projects. Please try again later.');
+      }
+    };
+
+    fetchInvitations();
   }, []);
 
   // Real-time validation
@@ -103,12 +120,30 @@ const ProjectsPage = () => {
     // Optimistic delete
     setProjects(prev => prev.filter(p => p.id !== id));
     setActiveMenuId(null);
-
     try {
       await deleteProject(id);
-    } catch {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
       setProjects(backup);
-      setError('Failed to delete project');
+      setError(err.response?.data?.error || 'Failed to delete project');
+    }
+  };
+
+  const handleInvitation = async (projectId: string, status: 'accepted' | 'rejected') => {
+    const backup = [...invitations];
+    try {
+      await respondToInvitation(projectId, status);
+      // Remove from local UI immediately
+      setInvitations(prev => prev.filter(inv => inv.project_id !== projectId));
+      
+      // If accepted, refresh the projects list to show the new project
+      if (status === 'accepted') {
+        const updatedProjects = await getProjects();
+        setProjects(updatedProjects);
+      }
+    } catch {
+      setInvitations(backup);
+      setError("Failed to respond to invitation");
     }
   };
 
@@ -123,12 +158,73 @@ const ProjectsPage = () => {
       {/* HEADER */}
       <header className="max-w-7xl mx-auto flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-4xl font-black tracking-tight">Projects</h1>
-          <p className="text-text-muted mt-1">Logged in as <span className="text-text-main font-bold">{user?.username}</span></p>
+          <h1 className="text-4xl font-black tracking-tight text-text-main">Projects</h1>
+          <p className="text-text-muted mt-1">Welcome, {user?.username}</p>
         </div>
-        <button onClick={logout} className="text-sm font-bold text-text-muted hover:text-text-main cursor-pointer transition-colors">
-          Logout
-        </button>
+
+        <div className="flex items-center gap-6">
+          {/* NOTIFICATIONS BELL */}
+          <div className="relative">
+            <button 
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className="relative text-2xl text-text-muted hover:text-text-main transition-transform active:scale-90 cursor-pointer"
+            >
+              🕭
+              {invitations.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-[10px] text-white items-center justify-center font-bold">
+                    {invitations.length}
+                  </span>
+                </span>
+              )}
+            </button>
+
+            {isNotificationsOpen && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={() => setIsNotificationsOpen(false)} />
+                <div className="absolute top-10 right-0 w-72 bg-card-bg border border-border shadow-2xl rounded-2xl z-30 py-4 px-4 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-text-muted mb-4">Invitations</h4>
+                  
+                  {invitations.length === 0 ? (
+                    <p className="text-sm text-text-muted py-4 text-center">No new invites</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {invitations.map((inv) => (
+                        <div key={inv.project_id} className="pb-4 border-b border-border last:border-0 last:pb-0">
+                          <p className="text-sm font-bold text-text-main">
+                            {inv.project_name}
+                          </p>
+                          <p className="text-[11px] text-text-muted mb-3">
+                            Invited by <span className="text-text-main">{inv.inviter}</span>
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleInvitation(inv.project_id, 'accepted')}
+                              className="flex-1 bg-text-main text-app-bg py-1.5 rounded-lg text-xs font-bold hover:opacity-90 cursor-pointer"
+                            >
+                              Accept
+                            </button>                  
+                            <button
+                              onClick={() => handleInvitation(inv.project_id, 'rejected')}
+                              className="flex-1 border border-border text-text-muted py-1.5 rounded-lg text-xs font-bold hover:bg-app-bg cursor-pointer"
+                            >
+                              Decline
+                            </button>                  
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          <button onClick={logout} className="text-sm font-bold text-text-muted hover:text-text-main transition-colors cursor-pointer">
+            Logout
+          </button>
+        </div>  
       </header>
 
       <main className="max-w-7xl mx-auto">
@@ -190,8 +286,16 @@ const ProjectsPage = () => {
                       onClick={(e) => handleDelete(e, project.id)}
                       className="w-full text-left px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 transition-colors"
                     >
-                      Delete
+                      Delete 
                     </button>
+                    {project.role === 'owner' && (
+                      <button 
+                        onClick={() => {setIsAddUsersModalOpen(true); setProjectToEdit(project); setActiveMenuId(null);}}
+                        className="w-full text-left px-4 py-2 text-sm font-medium hover:bg-app-bg transition-colors"
+                      >
+                        Add users
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -242,6 +346,8 @@ const ProjectsPage = () => {
           </div>
         </div>
       )}
+      {/* ADD USERS MODAL */}
+      {isAddUsersModalOpen && projectToEdit && (<InviteMembersModal projectId={projectToEdit.id} onClose={() => setIsAddUsersModalOpen(false)} onSuccess={() => setIsAddUsersModalOpen(false)}/>)}
     </div>
   );
 };
