@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS projects (
 CREATE TABLE IF NOT EXISTS project_members (
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role TEXT DEFAULT 'owner', 
+    role TEXT DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member', 'viewer')), 
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted')), 
     PRIMARY KEY (project_id, user_id)
 );
 

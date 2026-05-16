@@ -9,8 +9,8 @@ VALUES ('11111111-1111-4000-a000-000000000000', 'Test Project')
 ON CONFLICT DO NOTHING;
 
 -- Link user to project
-INSERT INTO project_members (project_id, user_id, role)
-VALUES ('11111111-1111-4000-a000-000000000000', '00000000-0000-4000-a000-000000000000', 'owner')
+INSERT INTO project_members (project_id, user_id, role, status)
+VALUES ('11111111-1111-4000-a000-000000000000', '00000000-0000-4000-a000-000000000000', 'owner', 'accepted')
 ON CONFLICT DO NOTHING;
 
 -- Create a board
