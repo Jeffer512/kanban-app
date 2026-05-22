@@ -25,6 +25,17 @@ export async function register(req: Request, res: Response) {
     'INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING id, username, created_at',
     [username, hashedPassword]
   );
+  
+  const user = newUser.rows[0];
+
+  const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '24h' });
+
+  res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+  });
 
   res.status(201).json({ message: "User registered", user: newUser.rows[0] });
 }
