@@ -46,6 +46,8 @@ export async function createColumn(req: Request, res: Response) {
      RETURNING id, title, order_index, created_at`,
     [title, boardId, projectId, orderIndex]
   );
+  
+  req.io.to(`board:${boardId}`).emit('board-updated');
 
   res.status(201).json(result.rows[0]);
 }
@@ -80,7 +82,7 @@ export async function updateColumn(req: Request, res: Response) {
     WHERE c.id = $${fields.length + 1} 
     AND c.project_id = pm.project_id 
     AND pm.user_id = $${fields.length + 2}
-    RETURNING c.id, c.title, c.order_index, c.created_at
+    RETURNING c.id, c.title, c.order_index, c.created_at, c.board_id
   `;
 
   const result = await pool.query(query, [...values, columnId, userId]);
@@ -88,6 +90,8 @@ export async function updateColumn(req: Request, res: Response) {
   if (result.rows.length === 0) {
     return res.status(403).json({ error: "Column not found or access denied" });
   }
+
+  req.io.to(`board:${result.rows[0].board_id}`).emit('board-updated');
 
   res.json(result.rows[0]);
 }
@@ -106,13 +110,15 @@ export async function deleteColumn(req: Request, res: Response) {
     `DELETE FROM columns c
      USING project_members pm
      WHERE c.id = $1 AND c.project_id = pm.project_id AND pm.user_id = $2
-     RETURNING c.id`,
+     RETURNING c.id, c.board_id`,
     [columnId, userId]
   );
 
   if (result.rows.length === 0) {
     return res.status(403).json({ error: "Access denied" });
   }
+
+  req.io.to(`board:${result.rows[0].board_id}`).emit('board-updated');
 
   res.json({ message: "Column deleted", id: columnId });
 }

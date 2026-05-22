@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router';
 import { getBoards, createBoard, updateBoard, deleteBoard } from '../api/kanbanService';
 import { CreateBoardSchema } from '../schemas/kanban';
 import type { Board } from '../types/kanban';
+import { useSocket } from '../context/SocketContext';
 
 const BoardsPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -15,6 +16,8 @@ const BoardsPage = () => {
   const [boardToEdit, setBoardToEdit] = useState<Board | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [boardName, setBoardName] = useState('');
+
+  const socket = useSocket();
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -30,7 +33,16 @@ const BoardsPage = () => {
     };
 
     fetchProjects();
-  }, [projectId]);
+
+    socket.emit('join-project', projectId);
+
+    socket.on('project-updated', fetchProjects);
+
+    return (() => {
+      socket.off('project-updated');
+      socket.emit('leave-project', projectId)
+    })
+  }, [projectId, socket]);
 
   // Real-time validation
   const validation = CreateBoardSchema.safeParse({ name: boardName });

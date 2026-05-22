@@ -32,6 +32,9 @@ export async function createProject(req: Request, res: Response, next: NextFunct
     );
 
     await client.query('COMMIT');
+
+    req.io.to(`user:${userId}`).emit('projects-updated');
+
     res.status(201).json(newProject);
   } catch (error) {
     await client.query('ROLLBACK');
@@ -100,6 +103,13 @@ export async function updateProject(req: Request, res: Response) {
   `;
 
   const result = await pool.query(query, [...values, projectId]);
+
+  const projectUsers = await pool.query('SELECT user_id FROM project_members WHERE project_id = $1', [projectId]);
+
+  projectUsers.rows.forEach((row) => {
+    req.io.to(`user:${row.user_id}`).emit('projects-updated');
+  });
+
   res.json(result.rows[0]);
 }
 
@@ -122,7 +132,14 @@ export async function deleteProject(req: Request, res: Response) {
     return res.status(403).json({ error: "Only the project owner can delete this project" });
   }
 
+  const projectUsers = await pool.query('SELECT user_id FROM project_members WHERE project_id = $1', [projectId]);
+
   await pool.query('DELETE FROM projects WHERE id = $1', [projectId]);
+  
+  projectUsers.rows.forEach((row) => {
+    req.io.to(`user:${row.user_id}`).emit('projects-updated');
+  });
+
   res.json({ message: "Project deleted successfully", id: projectId });
 }
 
@@ -189,6 +206,10 @@ export async function inviteUsersToProject(req: Request, res: Response) {
 
   const result = await pool.query(query, insertValues);
 
+  result.rows.forEach(row => {
+    req.io.to(`user:${row.user_id}`).emit('invite-received');
+  });
+
   res.json({
     message: `Successfully added/updated ${result.rows.length} members`,
     members: result.rows
@@ -244,6 +265,8 @@ export async function respondToInvitation(req: Request, res: Response) {
   if (result.rows.length === 0) {
     return res.status(404).json({ error: "Invitation not found" });
   }
+
+  req.io.to(`user:${userId}`).emit('projects-updated');
 
   res.json({ message: `Invitation ${status} successfully`, project_id });
 }

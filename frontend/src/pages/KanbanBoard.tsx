@@ -7,6 +7,7 @@ import { TaskModal } from '../components/TaskModal';
 import { ColumnModal } from '../components/ColumnModal';
 import { DragDropContext } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
+import { useSocket } from '../context/SocketContext';
 
 const KanbanBoard = () => {
   const { boardId } = useParams<{ boardId: string }>();
@@ -19,7 +20,10 @@ const KanbanBoard = () => {
   const [taskModal, setTaskModal] = useState<{ isOpen: boolean; task?: Task; columnId?: string }>({ isOpen: false });
   const [colModal, setColumnModal] = useState<{ isOpen: boolean; column?: ColumnWithTasks }>({ isOpen: false });
 
+  const socket = useSocket();
+
   useEffect(() => {
+
     const fetchBoard = async () => {
       if (boardId) {
         try {
@@ -33,7 +37,17 @@ const KanbanBoard = () => {
       }
     }
     fetchBoard();
-  }, [boardId])
+
+    socket.emit('join-board', boardId);
+
+    socket.on('board-updated', fetchBoard);
+
+    return () => {
+      socket.off('board-updated');
+      socket.emit('leave-board', boardId);
+    };
+
+  }, [boardId, socket])
 
   // --- TASK ACTIONS ---
 

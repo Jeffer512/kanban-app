@@ -29,9 +29,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod 
-      args:
-        # For the Nginx setup, a relative path is used
-        - VITE_API_URL=/api
     container_name: kanban-frontend
     restart: always
     ports:

@@ -6,6 +6,7 @@ import type { Invitation, Project } from '../types/kanban';
 import { useAuth } from '../context/AuthContext';
 import { z } from 'zod';
 import { InviteMembersModal } from '../components/InviteMembersModal';
+import { useSocket } from '../context/SocketContext';
 
 const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -23,34 +24,42 @@ const ProjectsPage = () => {
 
   const { user, logout } = useAuth();
 
+  const socket = useSocket();
+
   // Load projects on mount
   useEffect(() => {
-    const fetchProjects = async () => {
+    socket.emit('join-user-room');
+
+    const refreshData = async () => {
       try {
-        const data = await getProjects();
-        setProjects(data);
+        const [projData, invData] = await Promise.all([
+          getProjects(),
+          getInvitations()
+        ]);
+        setProjects(projData);
+        setInvitations(invData);
       } catch {
-        setError('Could not load projects. Please try again later.');
+        setError('Failed to get data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProjects();
-  }, []);
+    // 2. Initial fetch
+    refreshData();
 
-  useEffect(() => {
-    const fetchInvitations = async () => {
-      try {
-        const data = await getInvitations();
-        setInvitations(data);
-      } catch {
-        setError('Could not load projects. Please try again later.');
-      }
+    // 3. Listen for shouts to our private room
+    socket.on('projects-updated', refreshData);
+    socket.on('invite-received', refreshData);
+
+    // 4. Cleanup when leaving the Home page
+    return () => {
+      socket.off('projects-updated', refreshData);
+      socket.off('invite-received', refreshData);
+      socket.emit('leave-user-room');
     };
+  }, [socket]);
 
-    fetchInvitations();
-  }, []);
 
   // Real-time validation
   const validation = CreateProjectSchema.safeParse({ name: projectName });

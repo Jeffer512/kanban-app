@@ -10,6 +10,10 @@ export default defineConfig({
       '/api': {
         target: 'http://kanban-backend-dev:3000', 
         changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://kanban-backend-dev:3000',
+        ws: true,
       }
     }
   }

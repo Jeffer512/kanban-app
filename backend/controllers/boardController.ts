@@ -52,6 +52,8 @@ export async function createBoard(req: Request, res: Response, next: NextFunctio
     await client.query(columnQuery, columnValues);
     await client.query('COMMIT');
 
+    req.io.to(`project:${projectId}`).emit('project-updated');
+
     res.status(201).json(boardResult.rows[0]);
   } catch (error) {
     await client.query('ROLLBACK');
@@ -122,6 +124,9 @@ export async function updateBoard(req: Request, res: Response) {
   if (result.rows.length === 0) {
     return res.status(403).json({ error: "Board not found or access denied" });
   }
+  req.io.to(`board:${boardId}`).emit('board-updated');
+  req.io.to(`project:${result.rows[0].project_id}`).emit('project-updated');
+
 
   res.json(result.rows[0]);
 }
@@ -147,7 +152,10 @@ export async function deleteBoard(req: Request, res: Response) {
     return res.status(403).json({ error: "Insufficient permissions" });
   }
 
-  await pool.query('DELETE FROM boards WHERE id = $1', [boardId]);
+  const result = await pool.query('DELETE FROM boards WHERE id = $1 RETURNING project_id', [boardId]);
+
+  req.io.to(`project:${result.rows[0].project_id}`).emit('project-updated');
+
   res.json({ message: "Board deleted successfully", id: boardId });
 }
 

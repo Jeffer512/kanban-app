@@ -21,7 +21,7 @@ export async function createTask(req: Request, res: Response) {
 
   // Verify membership and retrieve project_id for denormalization
   const columnInfo = await pool.query(
-    `SELECT c.project_id FROM columns c
+    `SELECT c.project_id, c.board_id FROM columns c
      JOIN project_members pm ON c.project_id = pm.project_id
      WHERE c.id = $1 AND pm.user_id = $2`,
     [columnId, userId]
@@ -32,6 +32,7 @@ export async function createTask(req: Request, res: Response) {
   }
 
   const projectId = columnInfo.rows[0].project_id;
+  const boardId = columnInfo.rows[0].board_id;
 
   // Calculate next order index within the column
   const countResult = await pool.query(
@@ -46,6 +47,8 @@ export async function createTask(req: Request, res: Response) {
      RETURNING id, title, description, order_index, created_at`,
     [title, description, columnId, projectId, orderIndex]
   );
+
+  req.io.to(`board:${boardId}`).emit('board-updated');
 
   res.status(201).json(result.rows[0]);
 }
@@ -77,11 +80,11 @@ export async function updateTask(req: Request, res: Response) {
   const query = `
     UPDATE tasks t
     SET ${setClause}
-    FROM project_members pm
+    FROM columns c, project_members pm
     WHERE t.id = $${fields.length + 1} 
     AND t.project_id = pm.project_id 
     AND pm.user_id = $${fields.length + 2}
-    RETURNING t.id, t.title, t.description, t.order_index, t.created_at
+    RETURNING t.id, t.title, t.description, t.order_index, t.created_at, c.board_id
   `;
 
   const result = await pool.query(query, [...values, taskId, userId]);
@@ -89,6 +92,8 @@ export async function updateTask(req: Request, res: Response) {
   if (result.rows.length === 0) {
     return res.status(403).json({ error: "Task not found or access denied" });
   }
+
+  req.io.to(`board:${result.rows[0].board_id}`).emit('board-updated');
 
   res.json(result.rows[0]);
 }
@@ -105,15 +110,17 @@ export async function deleteTask(req: Request, res: Response) {
 
   const result = await pool.query(
     `DELETE FROM tasks t
-     USING project_members pm
+     USING columns c, project_members pm
      WHERE t.id = $1 AND t.project_id = pm.project_id AND pm.user_id = $2
-     RETURNING t.id`,
+     RETURNING t.id, c.board_id`,
     [taskId, userId]
   );
 
   if (result.rows.length === 0) {
     return res.status(403).json({ error: "Access denied or task not found" });
   }
+
+  req.io.to(`board:${result.rows[0].board_id}`).emit('board-updated');
 
   res.json({ message: "Task deleted", id: taskId });
 }
@@ -140,8 +147,9 @@ export async function moveTask(req: Request, res: Response, next: NextFunction) 
 
     // Get current task state and verify project membership
     const taskQuery = `
-      SELECT t.column_id, t.order_index, t.project_id 
+      SELECT t.column_id, t.order_index, t.project_id, c.board_id
       FROM tasks t
+      JOIN columns c ON t.column_id = c.id
       JOIN project_members pm ON t.project_id = pm.project_id
       WHERE t.id = $1 AND pm.user_id = $2
       FOR UPDATE OF t -- Lock the row to prevent concurrent move conflicts
@@ -154,6 +162,7 @@ export async function moveTask(req: Request, res: Response, next: NextFunction) 
     }
 
     const { column_id: oldColumnId, order_index: oldOrderIndex, project_id: projectId } = taskRes.rows[0];
+    const { board_id: boardId } = taskRes.rows[0];
 
     if (oldColumnId === newColumnId) {
       // Moving within the same column
@@ -205,6 +214,9 @@ export async function moveTask(req: Request, res: Response, next: NextFunction) 
     }
 
     await client.query('COMMIT');
+    
+    req.io.to(`board:${boardId}`).emit('board-updated');
+
     res.json({ message: "Task moved successfully" });
 
   } catch (error) {
