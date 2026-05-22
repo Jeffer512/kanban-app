@@ -28,7 +28,7 @@ const ProjectsPage = () => {
 
   // Load projects on mount
   useEffect(() => {
-    socket.emit('join-user-room');
+    socket.emit('join-user-room', user?.userId);
 
     const refreshData = async () => {
       try {
@@ -45,20 +45,20 @@ const ProjectsPage = () => {
       }
     };
 
-    // 2. Initial fetch
+    // Initial fetch
     refreshData();
 
-    // 3. Listen for shouts to our private room
+    // Listen to socket events
     socket.on('projects-updated', refreshData);
     socket.on('invite-received', refreshData);
 
-    // 4. Cleanup when leaving the Home page
+    // Cleanup when leaving the Home page
     return () => {
       socket.off('projects-updated', refreshData);
       socket.off('invite-received', refreshData);
-      socket.emit('leave-user-room');
+      socket.emit('leave-user-room', user?.userId);
     };
-  }, [socket]);
+  }, [user, socket]);
 
 
   // Real-time validation

@@ -10,8 +10,6 @@ import columnRouter from './routes/column.ts';
 import taskRouter from './routes/task.ts';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import cookie from 'cookie';
-import jwt from 'jsonwebtoken';
 
 const PORT = process.env.PORT || 3000;
 
@@ -30,27 +28,14 @@ const io = new Server(httpServer, {
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  const getUserId = () => {
-    const cookies = cookie.parse(socket.request.headers.cookie || '');
-    if (!cookies.token) return null;
-    try {
-      const decoded = jwt.verify(cookies.token, process.env.JWT_SECRET!) as { userId: string };
-      return decoded.userId;
-    } catch {
-      return null;
-    }
-  };
-
-  socket.on('join-user-room', () => {
-    const userId = getUserId();
-    if (userId) {
-      socket.join(`user:${userId}`);
-    }
+  socket.on('join-user-room', (userId) => {
+    socket.join(`user:${userId}`);
+    console.log(`User ${socket.id} joined user room ${userId}`);
   });
 
-  socket.on('leave-user-room', () => {
-    const userId = getUserId();
-    if (userId) socket.leave(`user:${userId}`);
+  socket.on('leave-user-room', (userId) => {
+    socket.leave(`user:${userId}`);
+    console.log(`User ${socket.id} left user room ${userId}`);
   });
 
   // Allow the frontend to join a specific project room
