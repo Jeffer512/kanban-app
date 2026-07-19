@@ -23,6 +23,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - PORT=${SERVER_PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     develop:
       watch:
         - action: sync

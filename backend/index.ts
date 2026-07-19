@@ -8,6 +8,7 @@ import boardRouter from './routes/board.ts';
 import type { Request, Response, NextFunction } from 'express';
 import columnRouter from './routes/column.ts';
 import taskRouter from './routes/task.ts';
+import aiRouter from './routes/ai.ts';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
@@ -99,6 +100,8 @@ app.use('/api/boards', boardRouter);
 app.use('/api/columns', columnRouter);
 
 app.use('/api/tasks', taskRouter);  
+
+app.use('/api/ai', aiRouter);
 
 // Catch and format all application errors.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

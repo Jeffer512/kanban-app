@@ -37,8 +37,8 @@ export const UpdateColumnSchema = CreateColumnSchema.partial();
  * Task Schemas
  */
 export const CreateTaskSchema = z.object({
-  title: z.string().min(1, "Title is required").max(50),
-  description: z.string().max(300).nullable().optional(),
+  title: z.string().min(1, "Title is required").max(100),
+  description: z.string().max(1000).nullable().optional(),
 });
 
 export const UpdateTaskSchema = CreateTaskSchema.partial();
