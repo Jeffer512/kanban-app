@@ -5,6 +5,7 @@ import type { FullBoard, Task, ColumnWithTasks } from '../types/kanban';
 import { Column } from '../components/Column';
 import { TaskModal } from '../components/TaskModal';
 import { ColumnModal } from '../components/ColumnModal';
+import { AITaskGeneratorModal } from '../components/AITaskGeneratorModal';
 import { DragDropContext } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useSocket } from '../context/SocketContext';
@@ -19,6 +20,7 @@ const KanbanBoard = () => {
   // Modal States
   const [taskModal, setTaskModal] = useState<{ isOpen: boolean; task?: Task; columnId?: string }>({ isOpen: false });
   const [colModal, setColumnModal] = useState<{ isOpen: boolean; column?: ColumnWithTasks }>({ isOpen: false });
+  const [aiGenModalOpen, setAiGenModalOpen] = useState(false);
 
   const socket = useSocket();
 
@@ -170,6 +172,17 @@ const KanbanBoard = () => {
 
     }
   };
+  const handleAiCreateTasks = async (tasks: Array<{ columnId: string; title: string; description: string }>) => {
+    if (!board) return;
+    const backup = structuredClone(board);
+
+    try {
+      await Promise.all(tasks.map(t => createTask(t.columnId, t.title, t.description)));
+    } catch {
+      setBoard(backup);
+      setError('Failed to create some tasks');
+    }
+  };
 
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -217,12 +230,22 @@ const KanbanBoard = () => {
           </h1>
         </div>
         
-        <button 
-          onClick={() => setColumnModal({ isOpen: true })}
-          className="bg-text-main text-app-bg px-5 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-lg shadow-zinc-900/20"
-        >
-          + Add Column
-        </button>
+        <div className="flex items-center gap-3">
+          {board && board.columns.length > 0 && (
+            <button
+              onClick={() => setAiGenModalOpen(true)}
+              className="px-5 py-2.5 rounded-xl font-bold text-sm border border-border text-text-muted hover:text-text-main hover:bg-zinc-500/5 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              ✨ Generate Tasks
+            </button>
+          )}
+          <button 
+            onClick={() => setColumnModal({ isOpen: true })}
+            className="bg-text-main text-app-bg px-5 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-lg shadow-zinc-900/20"
+          >
+            + Add Column
+          </button>
+        </div>
       </header>
 
       {/* KANBAN GRID */}
@@ -270,6 +293,14 @@ const KanbanBoard = () => {
           initialData={colModal.column} 
           onClose={() => setColumnModal({ isOpen: false })} 
           onSubmit={handleColumnSubmit} 
+        />
+      )}
+      
+      {aiGenModalOpen && board && (
+        <AITaskGeneratorModal
+          columns={board.columns.map(c => ({ id: c.id, title: c.title }))}
+          onClose={() => setAiGenModalOpen(false)}
+          onCreateTasks={handleAiCreateTasks}
         />
       )}
     </div>

@@ -104,3 +104,8 @@ export const generateTaskContent = async (title: string) => {
   const response = await api.post<{ title: string; description: string }>('/ai/generate-task', { title });
   return response.data;
 };
+
+export const generateTasks = async (prompt: string, columnTitles: string[]) => {
+  const response = await api.post<{ tasks: Array<{ title: string; description: string; suggestedColumn: string }> }>('/ai/generate-tasks', { prompt, columnTitles });
+  return response.data;
+};
