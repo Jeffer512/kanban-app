@@ -11,8 +11,16 @@ A full-stack task management application featuring drag-and-drop organization, m
 -   **Optimistic UI:** Instant interface updates for all CRUD operations with automatic rollback on server errors.
 -   **Theming:** Native support for system dark/light modes using CSS variables.
 -   **Responsive Design:** Optimized layouts for mobile and desktop using CSS Grid and Flexbox.
+-   **AI Task Assist:** Generate polished titles and descriptions from a rough idea using Gemini 2.5 Flash.
+-   **AI Task Generator:** Describe work in natural language and get a list of tasks with suggested columns to review and create.
 
 ## Technical Implementation
+
+### AI Integration (Gemini 2.5 Flash)
+
+-   **Structured Output:** Uses `responseMimeType: "application/json"` for reliable JSON parsing without regex.
+-   **Few-Shot Prompting:** Examples in the prompt guide the model to handle both specific and ambiguous inputs without hallucinating context.
+-   **Separated Service Layer:** Gemini API calls are isolated in `services/gemini.ts`, separate from HTTP handlers and validation.
 
 ### Backend (Node.js 25.9 + Express 5)
 
@@ -38,7 +46,7 @@ A full-stack task management application featuring drag-and-drop organization, m
 ## Tech Stack
 
 -   **Frontend:** React 19, Vite, Tailwind 4, Axios, Zod, @hello-pangea/dnd.
--   **Backend:** Node 25.9, Express 5, PostgreSQL, Zod, Bcrypt, JSONWebToken.
+-   **Backend:** Node 25.9, Express 5, PostgreSQL, Zod, Bcrypt, JSONWebToken, Gemini API.
 -   **Infrastructure:** Docker, Vercel, Render, Supabase.
 
 ## Setup & Installation
@@ -48,7 +56,7 @@ A full-stack task management application featuring drag-and-drop organization, m
     git clone https://github.com/yourusername/kanban-app.git
     ```
 
-4.  **Configure Environment:** Create a `.env` file in the root based on `.env.example`.
+4.  **Configure Environment:** Create a `.env` file in the root based on `.env.example`. The `GEMINI_API_KEY` is required for AI features — get one at [Google AI Studio](https://aistudio.google.com/).
 
 5.  **Launch with Docker:**
 
