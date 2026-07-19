@@ -98,3 +98,9 @@ export const deleteTask = async (id: string) => {
 export const moveTask = async (taskId: string, newColumnId: string, newOrderIndex: number) => {
   await api.patch(`/tasks/${taskId}/move`, { newColumnId, newOrderIndex });
 };
+
+// --- AI ---
+export const generateTaskContent = async (title: string) => {
+  const response = await api.post<{ title: string; description: string }>('/ai/generate-task', { title });
+  return response.data;
+};
