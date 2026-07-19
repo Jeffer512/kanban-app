@@ -6,6 +6,15 @@ interface TaskContent {
   description: string;
 }
 
+interface GeneratedTask {
+  title: string;
+  description: string;
+  suggestedColumn: string;
+}
+
+interface TasksResult {
+  tasks: GeneratedTask[];
+}
 
 function buildTaskPrompt(title: string): string {
   return `You are a product manager helping a team write clear, concise task cards for a kanban board.
@@ -27,6 +36,26 @@ Response: { "title": "Fix Login Authentication Error", "description": "Investiga
 
 Respond in JSON format:
 { "title": "...", "description": "..." }`;
+}
+
+function buildTasksPrompt(prompt: string, columnTitles: string[]): string {
+  return `You are a product manager helping a team break down work into kanban tasks.
+
+The board has these columns: ${columnTitles.join(', ')}.
+
+Given this description of work: "${prompt}"
+
+Break it down into specific, actionable tasks. For each task:
+- title (max 100 characters)
+- description (max 1000 characters)
+- suggestedColumn — pick the best fit from the columns listed above ("${columnTitles.join('", "')}")
+
+Respond in this JSON format:
+{
+  "tasks": [  
+    { "title": "Task title", "description": "Description", "suggestedColumn": "To Do" }
+  ]
+}`;
 }
 
 async function callGemini(prompt: string, maxTokens = 3000): Promise<string> {
@@ -66,7 +95,6 @@ async function callGemini(prompt: string, maxTokens = 3000): Promise<string> {
   return text;
 }
 
-
 export async function generateTaskContent(title: string): Promise<TaskContent> {
   const prompt = buildTaskPrompt(title);
   const raw = await callGemini(prompt, 3000);
@@ -80,4 +108,16 @@ export async function generateTaskContent(title: string): Promise<TaskContent> {
   return result;
 }
 
+export async function generateTasksFromPrompt(prompt: string, columnTitles: string[]): Promise<TasksResult> {
+  const builtPrompt = buildTasksPrompt(prompt, columnTitles);
+  const raw = await callGemini(builtPrompt, 20000);
+  const parsed = JSON.parse(raw);
 
+  const tasks = (parsed.tasks as Array<Record<string, unknown>> || []).map(t => ({
+    title: String(t.title ?? '').slice(0, 100),
+    description: String(t.description ?? '').slice(0, 1000),
+    suggestedColumn: String(t.suggestedColumn ?? columnTitles[0] ?? ''),
+  }));
+
+  return { tasks };
+}
