@@ -53,7 +53,7 @@ A full-stack task management application featuring drag-and-drop organization, m
 
 1.  **Clone the repo:**
     ``` bash
-    git clone https://github.com/yourusername/kanban-app.git
+    git clone https://github.com/Jeffer512/kanban-app.git
     ```
 
 4.  **Configure Environment:** Create a `.env` file in the root based on `.env.example`. The `GEMINI_API_KEY` is required for AI features — get one at [Google AI Studio](https://aistudio.google.com/).
